@@ -23,6 +23,7 @@ import CategoryManager from '@/components/CategoryManager'
 import BudgetManager from '@/components/BudgetManager'
 import Statistics from '@/components/Statistics'
 import ExportData from '@/components/ExportData'
+import BudgetAlerts from '@/components/BudgetAlerts'
 import { useStore } from '@/stores/useStore'
 import { createClient } from '@/utils/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
@@ -158,8 +159,12 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 统计卡片 */}
+      {/* 内容区域 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* 预算提醒 */}
+        <BudgetAlerts />
+        
+        {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
