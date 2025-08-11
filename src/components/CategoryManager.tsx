@@ -8,15 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
 import { supabase } from '@/lib/supabase'
 import { Category, TransactionType } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function CategoryManager() {
   const { categories, setCategories } = useStore()
+  const { user } = useAuth()
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [newCategory, setNewCategory] = useState({ name: '', type: 'expense' as TransactionType })
   const [showForm, setShowForm] = useState(false)
 
   const handleAdd = async () => {
     if (!newCategory.name.trim()) return
+    if (!user) {
+      alert('请先登录')
+      return
+    }
 
     try {
       const { data, error } = await supabase
@@ -24,7 +30,7 @@ export default function CategoryManager() {
         .insert([{
           name: newCategory.name,
           type: newCategory.type,
-          user_id: '00000000-0000-0000-0000-000000000000', // 使用默认UUID
+          user_id: user.id,
         }])
         .select()
         .single()

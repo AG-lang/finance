@@ -11,7 +11,9 @@ import {
   BarChart3,
   PieChart,
   DollarSign,
-  Download
+  Download,
+  LogOut,
+  User
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,11 +25,13 @@ import Statistics from '@/components/Statistics'
 import ExportData from '@/components/ExportData'
 import { useStore } from '@/stores/useStore'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('transactions')
   const [showTransactionForm, setShowTransactionForm] = useState(false)
   const { transactions, setTransactions, setCategories, setBudgets } = useStore()
+  const { user, signOut } = useAuth()
 
   // 计算统计数据
   const currentMonth = format(new Date(), 'yyyy-MM')
@@ -54,30 +58,38 @@ export default function Home() {
         return
       }
 
-      // 加载分类
+      if (!user) {
+        console.log('等待用户登录')
+        return
+      }
+
+      // 加载用户的分类（包括用户自己的和公共的）
       const { data: categoriesData } = await supabase
         .from('categories')
         .select('*')
+        .or(`user_id.eq.${user.id},user_id.is.null`)
         .order('name')
       
       if (categoriesData) {
         setCategories(categoriesData)
       }
 
-      // 加载交易记录
+      // 只加载当前用户的交易记录
       const { data: transactionsData } = await supabase
         .from('transactions')
         .select('*, category:categories(*)')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
       
       if (transactionsData) {
         setTransactions(transactionsData)
       }
 
-      // 加载预算
+      // 只加载当前用户的预算
       const { data: budgetsData } = await supabase
         .from('budgets')
         .select('*, category:categories(*)')
+        .eq('user_id', user.id)
         .eq('month', currentMonth)
       
       if (budgetsData) {
@@ -89,9 +101,11 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadData()
+    if (user) {
+      loadData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [user])
 
   const tabs = [
     { id: 'transactions', label: '收支记录', icon: Wallet },
@@ -112,6 +126,22 @@ export default function Home() {
               <h1 className="text-xl font-bold text-gray-900">个人记账</h1>
             </div>
             <div className="flex items-center gap-4">
+              {user && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-600">{user.email}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={signOut}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <span className="text-sm text-gray-500">
                 {format(new Date(), 'yyyy年MM月dd日', { locale: zhCN })}
               </span>

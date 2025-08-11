@@ -9,9 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
 import { supabase } from '@/lib/supabase'
 import { Budget } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function BudgetManager() {
   const { budgets, setBudgets, categories, transactions } = useStore()
+  const { user } = useAuth()
   const [showForm, setShowForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [newBudget, setNewBudget] = useState({
@@ -35,6 +37,10 @@ export default function BudgetManager() {
 
   const handleAdd = async () => {
     if (!newBudget.category_id || !newBudget.amount) return
+    if (!user) {
+      alert('请先登录')
+      return
+    }
 
     try {
       const { data, error } = await supabase
@@ -43,7 +49,7 @@ export default function BudgetManager() {
           category_id: newBudget.category_id,
           amount: parseFloat(newBudget.amount),
           month: newBudget.month,
-          user_id: '00000000-0000-0000-0000-000000000000', // 使用默认UUID
+          user_id: user.id,
         }])
         .select('*, category:categories(*)')
         .single()

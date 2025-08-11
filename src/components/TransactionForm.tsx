@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
 import { supabase } from '@/lib/supabase'
 import { Transaction } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 const transactionSchema = z.object({
   amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -34,6 +35,7 @@ interface TransactionFormProps {
 export default function TransactionForm({ transaction, onClose, onSuccess }: TransactionFormProps) {
   const [loading, setLoading] = useState(false)
   const { categories } = useStore()
+  const { user } = useAuth()
 
   const {
     register,
@@ -56,12 +58,17 @@ export default function TransactionForm({ transaction, onClose, onSuccess }: Tra
   const filteredCategories = categories.filter(c => c.type === watchType)
 
   const onSubmit = async (data: TransactionFormData) => {
+    if (!user) {
+      alert('请先登录')
+      return
+    }
+    
     setLoading(true)
     try {
       const transactionData = {
         ...data,
         amount: parseFloat(data.amount),
-        user_id: '00000000-0000-0000-0000-000000000000', // 使用默认UUID
+        user_id: user.id,
       }
 
       if (transaction) {
