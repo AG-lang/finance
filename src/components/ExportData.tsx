@@ -74,7 +74,7 @@ export default function ExportData() {
         '日期': '',
         '类型': '',
         '分类': '',
-        '金额': '',
+        '金额': null as any,
         '备注': '',
         '创建时间': ''
       },
@@ -82,7 +82,7 @@ export default function ExportData() {
         '日期': '统计汇总',
         '类型': '',
         '分类': '',
-        '金额': '',
+        '金额': null as any,
         '备注': '',
         '创建时间': ''
       },

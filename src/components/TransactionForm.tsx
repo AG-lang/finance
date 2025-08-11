@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
 import { supabase } from '@/lib/supabase'
-import { Transaction } from '@/types'
+import { Transaction, TransactionType } from '@/types'
 
 const transactionSchema = z.object({
   amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
@@ -33,7 +33,6 @@ interface TransactionFormProps {
 
 export default function TransactionForm({ transaction, onClose, onSuccess }: TransactionFormProps) {
   const [loading, setLoading] = useState(false)
-  const [type, setType] = useState<TransactionType>(transaction?.type || 'expense')
   const { categories } = useStore()
 
   const {

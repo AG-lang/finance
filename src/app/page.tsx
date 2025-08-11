@@ -10,7 +10,8 @@ import {
   TrendingDown, 
   BarChart3,
   PieChart,
-  DollarSign
+  DollarSign,
+  Download
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,10 +46,6 @@ export default function Home() {
   const balance = totalIncome - totalExpense
 
   // 加载数据
-  useEffect(() => {
-    loadData()
-  }, [])
-
   const loadData = async () => {
     try {
       // 加载分类
@@ -84,6 +81,11 @@ export default function Home() {
       console.error('加载数据失败:', error)
     }
   }
+
+  useEffect(() => {
+    loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const tabs = [
     { id: 'transactions', label: '收支记录', icon: Wallet },
