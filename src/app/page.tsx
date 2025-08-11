@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { 
@@ -17,16 +18,50 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import TransactionForm from '@/components/TransactionForm'
-import TransactionList from '@/components/TransactionList'
-import CategoryManager from '@/components/CategoryManager'
-import BudgetManager from '@/components/BudgetManager'
-import Statistics from '@/components/Statistics'
-import ExportData from '@/components/ExportData'
-import BudgetAlerts from '@/components/BudgetAlerts'
 import { useStore } from '@/stores/useStore'
 import { createClient } from '@/utils/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
+
+// 动态导入重型组件
+const TransactionForm = dynamic(() => import('@/components/TransactionForm'), {
+  loading: () => <div className="animate-pulse">加载中...</div>,
+})
+
+const TransactionList = dynamic(() => import('@/components/TransactionList'), {
+  loading: () => <div className="animate-pulse">加载交易记录...</div>,
+})
+
+const CategoryManager = dynamic(() => import('@/components/CategoryManager'), {
+  loading: () => <div className="animate-pulse">加载分类管理...</div>,
+  ssr: false,
+})
+
+const BudgetManager = dynamic(() => import('@/components/BudgetManager'), {
+  loading: () => <div className="animate-pulse">加载预算管理...</div>,
+  ssr: false,
+})
+
+const Statistics = dynamic(() => import('@/components/Statistics'), {
+  loading: () => <div className="animate-pulse">加载统计图表...</div>,
+  ssr: false,
+})
+
+const ExportData = dynamic(() => import('@/components/ExportData'), {
+  loading: () => <div className="animate-pulse">加载导出功能...</div>,
+  ssr: false,
+})
+
+const BudgetAlerts = dynamic(() => import('@/components/BudgetAlerts'), {
+  loading: () => null,
+  ssr: false,
+})
+
+// 加载状态组件
+const TabLoadingState = () => (
+  <div className="flex items-center justify-center py-12">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  </div>
+)
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('transactions')
@@ -35,21 +70,29 @@ export default function Home() {
   const { user, signOut } = useAuth()
   const supabase = createClient()
 
-  // 计算统计数据
-  const currentMonth = format(new Date(), 'yyyy-MM')
-  const monthlyTransactions = transactions.filter(t => 
-    t.date.startsWith(currentMonth)
+  // 使用 useMemo 缓存计算结果
+  const currentMonth = useMemo(() => format(new Date(), 'yyyy-MM'), [])
+  
+  const monthlyTransactions = useMemo(() => 
+    transactions.filter(t => t.date.startsWith(currentMonth)),
+    [transactions, currentMonth]
   )
   
-  const totalIncome = monthlyTransactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0)
-  
-  const totalExpense = monthlyTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0)
-  
-  const balance = totalIncome - totalExpense
+  const { totalIncome, totalExpense, balance } = useMemo(() => {
+    const income = monthlyTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0)
+    
+    const expense = monthlyTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0)
+    
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      balance: income - expense
+    }
+  }, [monthlyTransactions])
 
   // 加载数据
   const loadData = async () => {
@@ -65,37 +108,40 @@ export default function Home() {
         return
       }
 
-      // 加载用户的分类（包括用户自己的和公共的）
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('*')
-        .or(`user_id.eq.${user.id},user_id.is.null`)
-        .order('name')
+      // 并行加载所有数据
+      const [categoriesResponse, transactionsResponse, budgetsResponse] = await Promise.all([
+        // 加载用户的分类（包括用户自己的和公共的）
+        supabase
+          .from('categories')
+          .select('*')
+          .or(`user_id.eq.${user.id},user_id.is.null`)
+          .order('name'),
+        
+        // 只加载当前用户的交易记录
+        supabase
+          .from('transactions')
+          .select('*, category:categories(*)')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false }),
+        
+        // 只加载当前用户的预算
+        supabase
+          .from('budgets')
+          .select('*, category:categories(*)')
+          .eq('user_id', user.id)
+          .eq('month', currentMonth)
+      ])
       
-      if (categoriesData) {
-        setCategories(categoriesData)
+      if (categoriesResponse.data) {
+        setCategories(categoriesResponse.data)
       }
-
-      // 只加载当前用户的交易记录
-      const { data: transactionsData } = await supabase
-        .from('transactions')
-        .select('*, category:categories(*)')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false })
       
-      if (transactionsData) {
-        setTransactions(transactionsData)
+      if (transactionsResponse.data) {
+        setTransactions(transactionsResponse.data)
       }
-
-      // 只加载当前用户的预算
-      const { data: budgetsData } = await supabase
-        .from('budgets')
-        .select('*, category:categories(*)')
-        .eq('user_id', user.id)
-        .eq('month', currentMonth)
       
-      if (budgetsData) {
-        setBudgets(budgetsData)
+      if (budgetsResponse.data) {
+        setBudgets(budgetsResponse.data)
       }
     } catch (error) {
       console.error('加载数据失败:', error)
@@ -161,8 +207,10 @@ export default function Home() {
 
       {/* 内容区域 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* 预算提醒 */}
-        <BudgetAlerts />
+        {/* 预算提醒 - 懒加载 */}
+        <Suspense fallback={null}>
+          <BudgetAlerts />
+        </Suspense>
         
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,38 +276,44 @@ export default function Home() {
           </nav>
         </div>
 
-        {/* 内容区域 */}
+        {/* 内容区域 - 使用 Suspense 包裹动态组件 */}
         <div className="mt-6">
-          {activeTab === 'transactions' && (
-            <TransactionList 
-              transactions={monthlyTransactions}
-              onRefresh={loadData}
-            />
-          )}
-          {activeTab === 'statistics' && (
-            <Statistics transactions={transactions} />
-          )}
-          {activeTab === 'categories' && (
-            <CategoryManager />
-          )}
-          {activeTab === 'budget' && (
-            <BudgetManager />
-          )}
-          {activeTab === 'export' && (
-            <ExportData />
-          )}
+          <Suspense fallback={<TabLoadingState />}>
+            {activeTab === 'transactions' && (
+              <TransactionList 
+                transactions={monthlyTransactions}
+                onRefresh={loadData}
+              />
+            )}
+            {activeTab === 'statistics' && (
+              <Statistics transactions={transactions} />
+            )}
+            {activeTab === 'categories' && (
+              <CategoryManager />
+            )}
+            {activeTab === 'budget' && (
+              <BudgetManager />
+            )}
+            {activeTab === 'export' && (
+              <ExportData />
+            )}
+          </Suspense>
         </div>
       </div>
 
-      {/* 添加交易弹窗 */}
+      {/* 添加交易弹窗 - 懒加载 */}
       {showTransactionForm && (
-        <TransactionForm
-          onClose={() => setShowTransactionForm(false)}
-          onSuccess={() => {
-            setShowTransactionForm(false)
-            loadData()
-          }}
-        />
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>}>
+          <TransactionForm
+            onClose={() => setShowTransactionForm(false)}
+            onSuccess={() => {
+              setShowTransactionForm(false)
+              loadData()
+            }}
+          />
+        </Suspense>
       )}
     </div>
   )
