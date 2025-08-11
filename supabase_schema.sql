@@ -73,6 +73,11 @@ CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
 CREATE TRIGGER update_budgets_updated_at BEFORE UPDATE ON budgets
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+-- 插入默认用户（用于演示）
+INSERT INTO users (id, email, name) VALUES
+('00000000-0000-0000-0000-000000000000', 'demo@example.com', 'Demo User')
+ON CONFLICT (id) DO NOTHING;
+
 -- 插入默认分类
 INSERT INTO categories (name, type, icon, color, user_id) VALUES
 ('工资', 'income', 'Wallet', '#22c55e', NULL),

@@ -61,7 +61,7 @@ export default function TransactionForm({ transaction, onClose, onSuccess }: Tra
       const transactionData = {
         ...data,
         amount: parseFloat(data.amount),
-        user_id: 'demo-user', // 临时使用，实际应从认证获取
+        user_id: '00000000-0000-0000-0000-000000000000', // 使用默认UUID
       }
 
       if (transaction) {

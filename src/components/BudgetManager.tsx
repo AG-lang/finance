@@ -43,7 +43,7 @@ export default function BudgetManager() {
           category_id: newBudget.category_id,
           amount: parseFloat(newBudget.amount),
           month: newBudget.month,
-          user_id: 'demo-user',
+          user_id: '00000000-0000-0000-0000-000000000000', // 使用默认UUID
         }])
         .select('*, category:categories(*)')
         .single()

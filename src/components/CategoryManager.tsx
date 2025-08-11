@@ -24,7 +24,7 @@ export default function CategoryManager() {
         .insert([{
           name: newCategory.name,
           type: newCategory.type,
-          user_id: 'demo-user',
+          user_id: '00000000-0000-0000-0000-000000000000', // 使用默认UUID
         }])
         .select()
         .single()
