@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
 import { supabase } from '@/lib/supabase'
-import { Transaction, TransactionType } from '@/types'
+import { Transaction } from '@/types'
 
 const transactionSchema = z.object({
   amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
