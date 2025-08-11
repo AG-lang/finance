@@ -50,15 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 监听认证状态变化
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
       
-      // 根据认证状态导航
-      if (session) {
-        router.push('/')
-      } else {
+      // 只在登出时跳转到登录页
+      if (event === 'SIGNED_OUT') {
         router.push('/auth/login')
       }
     })
