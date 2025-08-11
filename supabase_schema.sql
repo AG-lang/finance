@@ -1,6 +1,7 @@
 -- 创建用户表
+-- 注意：id 应该引用 auth.users 表的 id
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE NOT NULL,
   name TEXT,
   avatar_url TEXT,
