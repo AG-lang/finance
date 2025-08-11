@@ -48,6 +48,12 @@ export default function Home() {
   // 加载数据
   const loadData = async () => {
     try {
+      // 检查 Supabase 是否正确初始化
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.error('Supabase 环境变量未配置')
+        return
+      }
+
       // 加载分类
       const { data: categoriesData } = await supabase
         .from('categories')
