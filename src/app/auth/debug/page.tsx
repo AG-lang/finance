@@ -1,15 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
+interface Result {
+  success: boolean
+  message: string
+  data?: unknown
+  hint?: string
+}
+
 export default function DebugAuthPage() {
   const [email, setEmail] = useState('test@example.com')
   const [password, setPassword] = useState('test123456')
-  const [result, setResult] = useState<any>(null)
+  const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(false)
 
   const supabase = createClient()
@@ -24,8 +31,9 @@ export default function DebugAuthPage() {
         message: error ? `连接失败: ${error.message}` : '连接成功',
         data 
       })
-    } catch (err: any) {
-      setResult({ success: false, message: `错误: ${err.message}` })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误'
+      setResult({ success: false, message: `错误: ${errorMessage}` })
     }
     setLoading(false)
   }
@@ -88,8 +96,9 @@ export default function DebugAuthPage() {
           })
         }
       }
-    } catch (err: any) {
-      setResult({ success: false, message: `错误: ${err.message}` })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误'
+      setResult({ success: false, message: `错误: ${errorMessage}` })
     }
     setLoading(false)
   }
@@ -118,8 +127,9 @@ export default function DebugAuthPage() {
           data 
         })
       }
-    } catch (err: any) {
-      setResult({ success: false, message: `错误: ${err.message}` })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误'
+      setResult({ success: false, message: `错误: ${errorMessage}` })
     }
     setLoading(false)
   }
@@ -147,8 +157,9 @@ export default function DebugAuthPage() {
           data: user 
         })
       }
-    } catch (err: any) {
-      setResult({ success: false, message: `错误: ${err.message}` })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误'
+      setResult({ success: false, message: `错误: ${errorMessage}` })
     }
     setLoading(false)
   }
@@ -173,7 +184,7 @@ export default function DebugAuthPage() {
           data: users 
         })
       }
-    } catch (err: any) {
+    } catch {
       setResult({ 
         success: false, 
         message: '此功能需要管理员权限',
@@ -202,8 +213,9 @@ export default function DebugAuthPage() {
           message: '重置邮件已发送，请检查邮箱' 
         })
       }
-    } catch (err: any) {
-      setResult({ success: false, message: `错误: ${err.message}` })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误'
+      setResult({ success: false, message: `错误: ${errorMessage}` })
     }
     setLoading(false)
   }
@@ -225,8 +237,9 @@ export default function DebugAuthPage() {
           message: '已成功登出' 
         })
       }
-    } catch (err: any) {
-      setResult({ success: false, message: `错误: ${err.message}` })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误'
+      setResult({ success: false, message: `错误: ${errorMessage}` })
     }
     setLoading(false)
   }
@@ -304,11 +317,11 @@ export default function DebugAuthPage() {
                     💡 提示: {result.hint}
                   </div>
                 )}
-                {result.data && (
+                {result.data ? (
                   <pre className="mt-3 text-xs overflow-auto bg-white p-3 rounded">
                     {JSON.stringify(result.data, null, 2)}
                   </pre>
-                )}
+                ) : null}
               </div>
             )}
 
@@ -316,10 +329,10 @@ export default function DebugAuthPage() {
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <h3 className="font-medium text-blue-900 mb-2">使用步骤：</h3>
               <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                <li>首先点击"测试连接"确认 Supabase 配置正确</li>
-                <li>点击"创建用户"创建测试账号</li>
+                <li>首先点击&quot;测试连接&quot;确认 Supabase 配置正确</li>
+                <li>点击&quot;创建用户&quot;创建测试账号</li>
                 <li>如果需要邮箱验证，检查邮箱并验证</li>
-                <li>使用"测试登录"验证账号是否可用</li>
+                <li>使用&quot;测试登录&quot;验证账号是否可用</li>
                 <li>登录成功后可以访问主页面</li>
               </ol>
               

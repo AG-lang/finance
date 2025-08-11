@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import { Category, TransactionType } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function CategoryManager() {
   const { categories, setCategories } = useStore()
   const { user } = useAuth()
+  const supabase = createClient()
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [newCategory, setNewCategory] = useState({ name: '', type: 'expense' as TransactionType })
   const [showForm, setShowForm] = useState(false)

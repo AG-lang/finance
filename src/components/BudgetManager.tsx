@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import { Budget } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function BudgetManager() {
   const { budgets, setBudgets, categories, transactions } = useStore()
   const { user } = useAuth()
+  const supabase = createClient()
   const [showForm, setShowForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [newBudget, setNewBudget] = useState({

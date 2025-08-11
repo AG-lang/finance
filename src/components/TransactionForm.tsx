@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useStore } from '@/stores/useStore'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import { Transaction } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -36,6 +36,7 @@ export default function TransactionForm({ transaction, onClose, onSuccess }: Tra
   const [loading, setLoading] = useState(false)
   const { categories } = useStore()
   const { user } = useAuth()
+  const supabase = createClient()
 
   const {
     register,

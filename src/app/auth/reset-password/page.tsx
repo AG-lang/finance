@@ -10,7 +10,7 @@ import { Mail, ArrowLeft, Send, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 
 const resetSchema = z.object({
   email: z.string().email('请输入有效的邮箱地址'),

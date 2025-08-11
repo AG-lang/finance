@@ -1,96 +1,57 @@
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // 创建响应对象
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
-  // 检查环境变量
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  // 如果环境变量不存在，跳过中间件逻辑
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase 环境变量未配置，跳过认证检查')
-    // 如果访问的不是调试页，重定向到调试页
-    if (!request.nextUrl.pathname.includes('/debug')) {
-      return NextResponse.redirect(new URL('/auth/debug', request.url))
-    }
-    return response
-  }
-
-  try {
-    const supabase = createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            })
-          },
-          remove(name: string, options: any) {
-            request.cookies.set({
-              name,
-              value: '',
-              ...options,
-            })
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-            })
-          },
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
         },
-      }
-    )
-
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // 如果用户未登录且访问的不是认证页面，重定向到登录页
-    if (!user && !request.nextUrl.pathname.startsWith('/auth')) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
     }
+  )
 
-    // 如果用户已登录且访问认证页面，重定向到首页
-    if (user && request.nextUrl.pathname.startsWith('/auth')) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-  } catch (error) {
-    console.error('Middleware error:', error)
-    // 发生错误时，允许访问调试页面
-    if (!request.nextUrl.pathname.includes('/debug')) {
-      return NextResponse.redirect(new URL('/auth/debug', request.url))
-    }
+  // 重要：刷新 session
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // 保护路由逻辑
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
+  const isDebugPage = request.nextUrl.pathname.includes('/debug')
+
+  if (!user && !isAuthPage && !isDebugPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    return NextResponse.redirect(url)
   }
 
-  return response
+  if (user && isAuthPage && !isDebugPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
 }
 
 export const config = {
@@ -101,6 +62,7 @@ export const config = {
      * - _next/image (图片优化文件)
      * - favicon.ico (网站图标)
      * - public 文件夹
+     * - api 路由
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

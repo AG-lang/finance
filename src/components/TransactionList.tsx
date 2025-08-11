@@ -7,7 +7,7 @@ import { Edit2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Transaction } from '@/types'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import TransactionForm from './TransactionForm'
 
 interface TransactionListProps {
@@ -18,6 +18,7 @@ interface TransactionListProps {
 export default function TransactionList({ transactions, onRefresh }: TransactionListProps) {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const supabase = createClient()
 
   const handleDelete = async (id: string) => {
     if (!confirm('确定要删除这条记录吗？')) return

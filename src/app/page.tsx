@@ -24,7 +24,7 @@ import BudgetManager from '@/components/BudgetManager'
 import Statistics from '@/components/Statistics'
 import ExportData from '@/components/ExportData'
 import { useStore } from '@/stores/useStore'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Home() {
@@ -32,6 +32,7 @@ export default function Home() {
   const [showTransactionForm, setShowTransactionForm] = useState(false)
   const { transactions, setTransactions, setCategories, setBudgets } = useStore()
   const { user, signOut } = useAuth()
+  const supabase = createClient()
 
   // 计算统计数据
   const currentMonth = format(new Date(), 'yyyy-MM')
